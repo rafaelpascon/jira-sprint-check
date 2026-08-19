@@ -1,0 +1,14 @@
+name = "jira-sprint-proxy"
+main = "worker.js"
+compatibility_date = "2024-11-01"
+
+[vars]
+JIRA_BASE_URL = "https://nationalautocare.atlassian.net"
+# Comma-separated extra exact origins to allow, beyond the built-in
+# *.github.io and localhost/127.0.0.1 defaults. Example:
+# ALLOWED_ORIGINS = "https://sprintcheck.example.com"
+ALLOWED_ORIGINS = ""
+
+# JIRA_EMAIL and JIRA_API_TOKEN are set as secrets, not here:
+#   wrangler secret put JIRA_EMAIL
+#   wrangler secret put JIRA_API_TOKEN

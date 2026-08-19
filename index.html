@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint Check — IT Product Engineering</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-page:#F4F5F2;
+    --surface:#FFFFFF;
+    --surface-sunken:#EEF0EB;
+    --ink-900:#1B2430;
+    --ink-700:#3A4452;
+    --ink-500:#6B7480;
+    --ink-300:#9AA2AC;
+    --border:#E2E4DE;
+    --border-strong:#CBCEC6;
+    --accent:#2F5D8A;
+    --accent-ink:#1E4569;
+    --accent-tint:#E7EFF6;
+    --amber:#C77E1E;
+    --amber-tint:#FBF0DE;
+    --green:#2E7D53;
+    --green-tint:#E7F3EC;
+    --red:#B23A2C;
+    --red-tint:#FBEAE7;
+    --radius:10px;
+    --font-display:'Space Grotesk',sans-serif;
+    --font-body:'Inter',sans-serif;
+    --font-mono:'IBM Plex Mono',monospace;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg-page);
+    color:var(--ink-900);
+    font-family:var(--font-body);
+    font-size:14px;
+    line-height:1.5;
+  }
+  .wrap{max-width:1180px;margin:0 auto;padding:28px 32px 64px;}
+
+  .mockup-banner{
+    background:var(--amber-tint);
+    border:1px solid #EBD3A8;
+    color:#6B4A10;
+    border-radius:var(--radius);
+    padding:10px 16px;
+    font-size:12.5px;
+    margin-bottom:20px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+
+  header.topbar{
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:16px;
+    margin-bottom:24px;
+    padding-bottom:20px;
+    border-bottom:1px solid var(--border);
+  }
+  .brand-block .eyebrow{
+    font-size:11px;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:var(--ink-500);
+    font-weight:500;
+    margin:0 0 4px;
+  }
+  .brand-block h1{
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:26px;
+    margin:0;
+    color:var(--ink-900);
+  }
+  .controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  select{
+    font-family:var(--font-body);
+    font-size:13.5px;
+    font-weight:500;
+    color:var(--ink-900);
+    background:var(--surface);
+    border:1px solid var(--border-strong);
+    border-radius:8px;
+    padding:8px 32px 8px 12px;
+    appearance:none;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%236B7480' stroke-width='2'><polyline points='6 9 12 15 18 9'/></svg>");
+    background-repeat:no-repeat;
+    background-position:right 10px center;
+    cursor:pointer;
+  }
+  select:hover{border-color:var(--ink-500);}
+  button.refresh{
+    font-family:var(--font-body);
+    font-size:13.5px;
+    font-weight:500;
+    color:#fff;
+    background:var(--accent);
+    border:1px solid var(--accent-ink);
+    border-radius:8px;
+    padding:8px 16px;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  button.refresh:hover{background:var(--accent-ink);}
+  button.refresh svg{width:15px;height:15px;}
+  #toast{
+    position:relative;
+    margin-top:10px;
+    font-size:12.5px;
+    color:var(--accent-ink);
+    background:var(--accent-tint);
+    border:1px solid #C7D8E7;
+    border-radius:8px;
+    padding:8px 12px;
+    display:none;
+  }
+
+  .sprint-strip{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:20px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:18px 22px;
+    margin-bottom:20px;
+  }
+  .sprint-meta .label{font-size:11px;color:var(--ink-500);text-transform:uppercase;letter-spacing:.06em;margin:0 0 3px;}
+  .sprint-meta .value{font-family:var(--font-display);font-size:17px;font-weight:600;margin:0;}
+  .sprint-meta .sub{font-size:12.5px;color:var(--ink-500);margin-top:2px;}
+  .gauge-block{display:flex;align-items:center;gap:14px;}
+  .gauge-num{font-family:var(--font-display);font-size:22px;font-weight:600;color:var(--accent-ink);}
+  .gauge-cap{font-size:11px;color:var(--ink-500);text-transform:uppercase;letter-spacing:.05em;}
+
+  .updated-note{font-size:11.5px;color:var(--ink-500);margin:6px 2px 0;text-align:right;}
+  .data-note{font-size:11px;color:var(--ink-500);margin:-8px 0 12px;font-style:italic;}
+
+  .kpi-row{
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+    gap:12px;
+    margin-bottom:22px;
+  }
+  .kpi{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:14px 16px;
+  }
+  .kpi .label{font-size:11.5px;color:var(--ink-500);margin:0 0 6px;}
+  .kpi .num{font-family:var(--font-display);font-size:24px;font-weight:600;margin:0;}
+  .kpi.danger .num{color:var(--red);}
+  .kpi.warn .num{color:var(--amber);}
+  .kpi.good .num{color:var(--green);}
+
+  .grid-2{display:grid;grid-template-columns:1.15fr .85fr;gap:16px;align-items:start;}
+  @media (max-width:860px){.grid-2{grid-template-columns:1fr;} .kpi-row{grid-template-columns:repeat(2,1fr);}}
+
+  .panel{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:18px 20px;
+    margin-bottom:16px;
+  }
+  .panel h2{
+    font-family:var(--font-display);
+    font-size:15px;
+    font-weight:600;
+    margin:0 0 4px;
+  }
+  .panel .panel-sub{font-size:12px;color:var(--ink-500);margin:0 0 14px;}
+
+  .bar-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+  .bar-row:last-child{margin-bottom:0;}
+  .bar-label{width:120px;font-size:12.5px;color:var(--ink-700);flex-shrink:0;}
+  .bar-track{flex:1;height:10px;background:var(--surface-sunken);border-radius:5px;overflow:hidden;}
+  .bar-fill{height:100%;border-radius:5px;}
+  .bar-count{width:28px;text-align:right;font-family:var(--font-mono);font-size:12px;color:var(--ink-700);}
+
+  .vbar-chart{display:flex;align-items:flex-end;gap:10px;height:110px;padding-top:8px;}
+  .vbar-col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;}
+  .vbar{width:100%;max-width:34px;background:var(--accent);border-radius:4px 4px 0 0;position:relative;}
+  .vbar.current{background:var(--accent-ink);}
+  .vbar-val{font-size:10.5px;color:var(--ink-500);margin-bottom:3px;font-family:var(--font-mono);}
+  .vbar-label{font-size:11px;color:var(--ink-500);margin-top:6px;}
+
+  .stale-tag{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10.5px;font-weight:500;margin-left:6px;background:var(--amber-tint);color:var(--amber);}
+
+  ul.list{list-style:none;margin:0;padding:0;}
+  li.impediment{
+    display:flex;
+    gap:12px;
+    padding:10px 0;
+    border-bottom:1px solid var(--border);
+  }
+  li.impediment:last-child{border-bottom:none;}
+  .imp-key{font-family:var(--font-mono);font-size:12px;color:var(--red);font-weight:500;flex-shrink:0;min-width:64px;text-decoration:none;}
+  .imp-key:hover{text-decoration:underline;}
+  .imp-body .imp-title{font-size:13px;color:var(--ink-900);margin:0 0 3px;}
+  .imp-body .imp-meta{font-size:11.5px;color:var(--ink-500);}
+  .pill{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10.5px;font-weight:500;margin-left:6px;}
+  .pill.high{background:var(--red-tint);color:var(--red);}
+  .pill.medium{background:var(--amber-tint);color:var(--amber);}
+
+  table{width:100%;border-collapse:collapse;font-size:12.5px;}
+  thead th{
+    text-align:left;
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:.04em;
+    color:var(--ink-500);
+    font-weight:500;
+    padding:0 8px 8px 0;
+    border-bottom:1px solid var(--border);
+  }
+  tbody td{padding:9px 8px 9px 0;border-bottom:1px solid var(--border);}
+  tbody tr:last-child td{border-bottom:none;}
+  .cap-bar{width:70px;height:6px;background:var(--surface-sunken);border-radius:3px;overflow:hidden;display:inline-block;vertical-align:middle;margin-right:8px;}
+  .cap-fill{height:100%;background:var(--accent);border-radius:3px;}
+
+  li.feed{
+    display:flex;
+    gap:12px;
+    padding:10px 0;
+    border-bottom:1px solid var(--border);
+  }
+  li.feed:last-child{border-bottom:none;}
+  .feed-dot{width:7px;height:7px;border-radius:50%;background:var(--ink-300);margin-top:6px;flex-shrink:0;}
+  .feed-dot.done{background:var(--green);}
+  .feed-dot.blocked{background:var(--red);}
+  .feed-dot.progress{background:var(--accent);}
+  .feed-dot.comment{background:#A88BC7;}
+  .feed-dot.link{background:#7C93A8;}
+  .feed-body .feed-title{font-size:12.5px;color:var(--ink-900);margin:0 0 2px;}
+  .feed-body .feed-title .k{font-family:var(--font-mono);color:var(--ink-500);margin-right:6px;text-decoration:none;}
+  .feed-body .feed-title .k:hover{text-decoration:underline;color:var(--accent-ink);}
+  .feed-body .feed-meta{font-size:11.5px;color:var(--ink-500);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="mockup-banner">
+    <span>All 5 teams below use real data pulled directly from Jira. "Refresh data" re-pulls it live via a proxy — until it's configured (or if a call fails), this is the last known snapshot.</span>
+  </div>
+
+  <header class="topbar">
+    <div class="brand-block">
+      <p class="eyebrow">IT Product Engineering · Sprint Check</p>
+      <h1>Team report — current sprint</h1>
+    </div>
+    <div class="controls">
+      <div>
+        <select id="teamSelect" onchange="renderTeam(this.value)">
+          <option value="overview">All teams (overview)</option>
+          <option value="production_support">Production Support</option>
+          <option value="atlas">Atlas</option>
+          <option value="full_throttle">Full Throttle Coders</option>
+          <option value="runtime_terror">Runtime Terror</option>
+          <option value="shield">Shield</option>
+        </select>
+        <button class="refresh" id="refreshBtn" onclick="refreshData()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+          <span id="refreshBtnLabel">Refresh data</span>
+        </button>
+        <div class="updated-note" id="updatedNote">Last updated —</div>
+      </div>
+    </div>
+  </header>
+  <div id="toast"></div>
+  <div id="refreshError" style="display:none;margin-top:10px;font-size:12.5px;color:var(--red);background:var(--red-tint);border:1px solid #E3B8B0;border-radius:8px;padding:10px 14px;"></div>
+
+  <div id="overviewView" style="display:none;">
+    <div class="panel">
+      <h2>All teams — sprint overview</h2>
+      <p class="panel-sub">August 2026 sprint, side by side. Click a team to see full detail.</p>
+      <table>
+        <thead><tr><th>Team</th><th>Total</th><th>Completed</th><th>Blocked</th><th>Aging</th><th>% complete</th><th>% time elapsed</th></tr></thead>
+        <tbody id="overviewBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="teamDetailView">
+  <div class="sprint-strip">
+    <div class="sprint-meta">
+      <p class="label">Active sprint</p>
+      <p class="value" id="sprintName">—</p>
+      <p class="sub" id="sprintDates">—</p>
+    </div>
+    <div class="sprint-meta">
+      <p class="label">Sprint goal</p>
+      <p class="value" id="sprintGoal" style="font-size:14px;">—</p>
+    </div>
+    <div class="gauge-block">
+      <div>
+        <div class="gauge-num" id="sprintProgress">—</div>
+        <div class="gauge-cap">time elapsed</div>
+      </div>
+      <div style="width:1px;height:30px;background:var(--border-strong);"></div>
+      <div>
+        <div class="gauge-num" id="sprintCompletion" style="color:var(--green);">—</div>
+        <div class="gauge-cap">completed</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="kpi-row" id="kpiRow"></div>
+
+  <div class="grid-2">
+    <div>
+      <div class="panel">
+        <h2>Velocity trend</h2>
+        <p class="panel-sub">Completed issues per sprint, last 6 months</p>
+        <div class="vbar-chart" id="velocityChart"></div>
+      </div>
+      <div class="panel">
+        <h2>Issue status</h2>
+        <p class="panel-sub">Breakdown of all issues in the current sprint, by status</p>
+        <div id="statusBars"></div>
+      </div>
+      <div class="panel">
+        <h2>Impediments</h2>
+        <p class="panel-sub">Blocked or flagged issues in the current sprint</p>
+        <ul class="list" id="impedimentsList"></ul>
+      </div>
+      <div class="panel">
+        <h2>Aging issues</h2>
+        <p class="panel-sub">In progress for 5+ days with no status change — not formally flagged, but worth a check</p>
+        <ul class="list" id="agingList"></ul>
+      </div>
+    </div>
+    <div>
+      <div class="panel">
+        <h2>Capacity / workload</h2>
+        <p class="panel-sub" id="capacitySub">Open issues per person in the current sprint</p>
+        <table>
+          <thead><tr><th>Person</th><th>Load</th><th>High priority</th></tr></thead>
+          <tbody id="capacityBody"></tbody>
+        </table>
+      </div>
+      <div class="panel">
+        <h2>Recent activity</h2>
+        <p class="panel-sub">Latest updates on the team's issues</p>
+        <ul class="list" id="feedList"></ul>
+      </div>
+    </div>
+  </div>
+  </div>
+
+</div>
+
+<script>
+let SNAPSHOT_ISO = "2026-08-19T13:27:38Z";
+let AGING_SNAPSHOT_ISO = "2026-08-19T13:27:38Z";
+const STALE_DAYS_THRESHOLD = 5;
+
+// --- Live refresh config -----------------------------------------------
+// Fill in after `wrangler deploy` (see deployment walkthrough).
+const JIRA_PROXY_URL = "https://jira-sprint-proxy.sprintcheck.workers.dev";
+
+// Jira Agile board ID for each team. Find these by opening each team's
+// board in Jira and reading the `rapidView=` (or `board/`) number from the
+// URL, or ask your Jira admin.
+const BOARD_IDS = {
+  production_support: 2350,
+  atlas: 2974,
+  full_throttle: 2314,
+  runtime_terror: 2348,
+  shield: 6500
+};
+
+const emptyTeam = (label) => ({
+  label,
+  real: true,
+  sprint: { name: "No data yet", start: "2026-01-01", end: "2026-01-02", goal: "Click \"Refresh data\" to load the current sprint from Jira." },
+  kpis: { total: 0, completed: 0, inProgress: 0, blocked: 0, unassigned: 0 },
+  velocity: [],
+  statusCounts: [],
+  impediments: [],
+  aging: [],
+  capacityNote: "No data yet — click \"Refresh data\".",
+  capacity: [],
+  feed: []
+});
+
+// Placeholder shell only — no real sprint data is committed to this repo.
+// The dashboard always pulls live from Jira via the proxy Worker; this is
+// just what renders before the first successful refresh.
+const DATA = {
+  production_support: emptyTeam("Production Support"),
+  atlas: emptyTeam("Atlas"),
+  full_throttle: emptyTeam("Full Throttle Coders"),
+  runtime_terror: emptyTeam("Runtime Terror"),
+  shield: emptyTeam("Shield")
+};
+
+
+function fmtDate(iso){
+  const d = new Date(iso + "T00:00:00");
+  return d.toLocaleDateString("en-US", { day:"2-digit", month:"short" });
+}
+
+function fmtDateTime(iso){
+  const d = new Date(iso);
+  return d.toLocaleString("en-US", { timeZone: "America/New_York", month:"short", day:"2-digit", hour:"numeric", minute:"2-digit" }) + " EST";
+}
+
+function sprintProgress(start, end){
+  const s = new Date(start + "T00:00:00").getTime();
+  const e = new Date(end + "T00:00:00").getTime();
+  if (e === s) return 0;
+  const now = new Date(SNAPSHOT_ISO).getTime();
+  const pct = Math.max(0, Math.min(100, Math.round(((now - s) / (e - s)) * 100)));
+  return pct;
+}
+
+function daysAging(iso){
+  const ms = new Date(AGING_SNAPSHOT_ISO).getTime() - new Date(iso).getTime();
+  return Math.floor(ms / (1000 * 60 * 60 * 24));
+}
+
+let LIVE_DATA = null; // populated on successful refresh; DATA is the fallback
+
+function activeData(){
+  return LIVE_DATA || DATA;
+}
+
+function renderOverview(){
+  document.getElementById("overviewView").style.display = "block";
+  document.getElementById("teamDetailView").style.display = "none";
+  const teamKeys = Object.keys(activeData());
+  document.getElementById("overviewBody").innerHTML = teamKeys.map(key => {
+    const t = activeData()[key];
+    const pct = t.kpis.total ? Math.round(t.kpis.completed / t.kpis.total * 100) : 0;
+    const elapsed = sprintProgress(t.sprint.start, t.sprint.end);
+    return `
+      <tr style="cursor:pointer;" onclick="document.getElementById('teamSelect').value='${key}'; renderTeam('${key}');">
+        <td style="font-weight:500;color:var(--accent-ink);">${t.label}</td>
+        <td>${t.kpis.total}</td>
+        <td>${t.kpis.completed}</td>
+        <td>${t.kpis.blocked > 0 ? `<span style="color:var(--red);">${t.kpis.blocked}</span>` : "—"}</td>
+        <td>${t.aging.length > 0 ? `<span style="color:var(--amber);">${t.aging.length}</span>` : "—"}</td>
+        <td>${pct}%</td>
+        <td>${elapsed}%${elapsed >= 100 ? ' <span style="color:var(--amber);">(overdue)</span>' : ""}</td>
+      </tr>
+    `;
+  }).join("");
+  document.getElementById("updatedNote").textContent = "Last updated " + fmtDateTime(SNAPSHOT_ISO);
+}
+
+function renderTeam(key){
+  if (key === "overview") { renderOverview(); return; }
+  document.getElementById("overviewView").style.display = "none";
+  document.getElementById("teamDetailView").style.display = "block";
+  const t = activeData()[key];
+
+  document.getElementById("sprintName").textContent = t.sprint.name;
+  document.getElementById("sprintDates").textContent = fmtDate(t.sprint.start) + " → " + fmtDate(t.sprint.end);
+  document.getElementById("sprintGoal").textContent = t.sprint.goal;
+  document.getElementById("sprintProgress").textContent = sprintProgress(t.sprint.start, t.sprint.end) + "%";
+  document.getElementById("sprintCompletion").textContent = (t.kpis.total ? Math.round(t.kpis.completed / t.kpis.total * 100) : 0) + "%";
+
+  const maxVelocity = Math.max(...t.velocity.map(v => v.completed), 1);
+  document.getElementById("velocityChart").innerHTML = t.velocity.map((v, idx) => `
+    <div class="vbar-col">
+      <div class="vbar-val">${v.completed}</div>
+      <div class="vbar ${idx === t.velocity.length - 1 ? "current" : ""}" style="height:${Math.max(4, v.completed / maxVelocity * 100)}%;"></div>
+      <div class="vbar-label">${v.label}</div>
+    </div>
+  `).join("");
+
+  const kpiRow = document.getElementById("kpiRow");
+  const k = t.kpis;
+  kpiRow.innerHTML = `
+    <div class="kpi"><p class="label">Total in sprint</p><p class="num">${k.total}</p></div>
+    <div class="kpi good"><p class="label">Completed</p><p class="num">${k.completed}</p></div>
+    <div class="kpi warn"><p class="label">In progress</p><p class="num">${k.inProgress}</p></div>
+    <div class="kpi danger"><p class="label">Blocked</p><p class="num">${k.blocked}</p></div>
+    <div class="kpi"><p class="label">Unassigned</p><p class="num">${k.unassigned}</p></div>
+  `;
+
+  const maxCount = Math.max(...t.statusCounts.map(s => s.count), 1);
+  document.getElementById("statusBars").innerHTML = t.statusCounts.map(s => `
+    <div class="bar-row">
+      <div class="bar-label">${s.name}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${(s.count/maxCount*100)}%;background:${s.color};"></div></div>
+      <div class="bar-count">${s.count}</div>
+    </div>
+  `).join("");
+
+  const impList = document.getElementById("impedimentsList");
+  const keyTag = (key) => t.real
+    ? `<a class="imp-key" href="https://nationalautocare.atlassian.net/browse/${key}" target="_blank" rel="noopener">${key}</a>`
+    : `<span class="imp-key" style="cursor:default;">${key}</span>`;
+  impList.innerHTML = t.impediments.length ? t.impediments.map(i => `
+    <li class="impediment">
+      ${keyTag(i.key)}
+      <div class="imp-body">
+        <p class="imp-title">${i.title}<span class="pill ${i.priority}">${i.priority === "high" ? "High" : "Medium"}</span></p>
+        <p class="imp-meta">${i.assignee} · last updated ${fmtDateTime(i.updated)}${i.note ? ` · ${i.note}` : ""}</p>
+      </div>
+    </li>
+  `).join("") : `<li class="impediment"><div class="imp-body"><p class="imp-meta">No impediments right now.</p></div></li>`;
+
+  const agingList = document.getElementById("agingList");
+  agingList.innerHTML = t.aging.length ? t.aging.map(a => `
+    <li class="impediment">
+      ${keyTag(a.key)}
+      <div class="imp-body">
+        <p class="imp-title">${a.title}<span class="stale-tag">${daysAging(a.since)}d in ${a.status}</span></p>
+        <p class="imp-meta">${a.assignee} · no status change since ${fmtDateTime(a.since)}</p>
+      </div>
+    </li>
+  `).join("") : `<li class="impediment"><div class="imp-body"><p class="imp-meta">Nothing stale right now.</p></div></li>`;
+
+  document.getElementById("capacitySub").textContent = t.capacityNote || "Open issues per person in the current sprint";
+  const maxLoad = Math.max(...t.capacity.map(p => p.load), 1);
+  document.getElementById("capacityBody").innerHTML = t.capacity.map(p => `
+    <tr>
+      <td>${p.name}</td>
+      <td><span class="cap-bar"><span class="cap-fill" style="width:${Math.min(100, p.load / maxLoad * 100)}%;"></span></span>${p.load}</td>
+      <td>${p.high > 0 ? p.high : "—"}</td>
+    </tr>
+  `).join("");
+
+  document.getElementById("feedList").innerHTML = t.feed.map(f => {
+    let dotClass = "progress";
+    let text = "";
+    if (f.action === "comment") {
+      dotClass = "comment";
+      text = `${f.who} commented`;
+    } else if (f.action === "status") {
+      dotClass = f.detail === "Done" ? "done" : (/block/i.test(f.detail) ? "blocked" : "progress");
+      text = `${f.who} moved to <b>${f.detail}</b>`;
+    } else if (f.action === "assignee") {
+      dotClass = "progress";
+      text = `${f.who} reassigned to <b>${f.detail}</b>`;
+    } else if (f.action === "link") {
+      dotClass = "link";
+      text = `${f.who} ${f.detail}`;
+    } else if (f.action === "field") {
+      dotClass = "progress";
+      text = `${f.who} updated <b>${f.detail}</b>`;
+    }
+    const keyTag = t.real
+      ? `<a class="k" href="https://nationalautocare.atlassian.net/browse/${f.key}" target="_blank" rel="noopener">${f.key}</a>`
+      : `<span class="k" style="cursor:default;">${f.key}</span>`;
+    return `
+    <li class="feed">
+      <div class="feed-dot ${dotClass}"></div>
+      <div class="feed-body">
+        <p class="feed-title">${keyTag}${f.title}</p>
+        <p class="feed-meta">${text} · ${fmtDateTime(f.updated)}</p>
+      </div>
+    </li>
+  `;
+  }).join("");
+
+  document.getElementById("updatedNote").textContent = "Last updated " + fmtDateTime(SNAPSHOT_ISO) + " (from Jira)";
+}
+
+// --- Live refresh -------------------------------------------------------
+
+// Runs fn over items with at most `limit` in flight at once — the Worker
+// and Jira's legacy sprintreport endpoint are slow enough that firing 20+
+// requests fully sequentially made "Refresh data" take minutes.
+async function mapWithConcurrency(items, limit, fn){
+  const results = new Array(items.length);
+  let next = 0;
+  async function worker(){
+    while (next < items.length) {
+      const i = next++;
+      results[i] = await fn(items[i], i);
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
+  return results;
+}
+
+function statusColorFor(name, categoryKey){
+  const n = (name || "").toLowerCase();
+  if (categoryKey === "done") return "var(--green)";
+  if (/block|hold/.test(n)) return "var(--red)";
+  if (/progress/.test(n)) return "var(--accent)";
+  if (/qa/.test(n)) return "#A88BC7";
+  if (/acceptance|review/.test(n)) return "#7C93A8";
+  if (/cancel/.test(n)) return "var(--ink-300)";
+  if (categoryKey === "new") return "var(--ink-300)";
+  return "var(--accent)";
+}
+
+function priorityBucket(name){
+  return /high|critical|blocker/i.test(name || "") ? "high" : "medium";
+}
+
+function shortSprintLabel(name){
+  // "Sprint 11 2026" -> "S11". Falls back to the trailing number (e.g. a
+  // month-named sprint like "August 2026") or a truncated name.
+  const sprintNum = (name || "").match(/sprint\s+(\d+)/i);
+  if (sprintNum) return "S" + sprintNum[1];
+  const trailingNum = (name || "").match(/(\d+)\s*$/);
+  return trailingNum ? trailingNum[1] : (name || "").slice(0, 6);
+}
+
+// Refreshing 5 teams concurrently can otherwise fire 20-30 requests at
+// once, which Jira answers with 429s. This caps how many proxy requests
+// are in flight app-wide at once, and retries 429s with backoff instead
+// of just dropping that data point.
+const JIRA_MAX_CONCURRENT = 4;
+let activeJiraRequests = 0;
+const jiraSlotQueue = [];
+
+function acquireJiraSlot(){
+  return new Promise((resolve) => {
+    const tryAcquire = () => {
+      if (activeJiraRequests < JIRA_MAX_CONCURRENT) {
+        activeJiraRequests++;
+        resolve();
+      } else {
+        jiraSlotQueue.push(tryAcquire);
+      }
+    };
+    tryAcquire();
+  });
+}
+
+function releaseJiraSlot(){
+  activeJiraRequests--;
+  const next = jiraSlotQueue.shift();
+  if (next) next();
+}
+
+async function jiraRequest(path, init){
+  if (!JIRA_PROXY_URL) {
+    throw new Error("JIRA_PROXY_URL is not set — plug in your deployed Worker URL in index.html.");
+  }
+  for (let attempt = 0; attempt < 4; attempt++) {
+    await acquireJiraSlot();
+    let res;
+    try {
+      res = await fetch(JIRA_PROXY_URL + path, init);
+    } finally {
+      releaseJiraSlot();
+    }
+    if (res.status === 429 && attempt < 3) {
+      const retryAfter = Number(res.headers.get("Retry-After")) || attempt + 1;
+      await new Promise((r) => setTimeout(r, retryAfter * 1000));
+      continue;
+    }
+    if (!res.ok) throw new Error(`proxy request failed (${res.status}) for ${path}`);
+    return res.json();
+  }
+  throw new Error(`proxy request failed (429, rate limited) for ${path}`);
+}
+
+async function jiraFetch(path){
+  return jiraRequest(path, { headers: { "Accept": "application/json" } });
+}
+
+async function jiraPost(path, body){
+  return jiraRequest(path, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Accept": "application/json" },
+    body: JSON.stringify(body)
+  });
+}
+
+async function getActiveSprint(boardId){
+  const data = await jiraFetch(`/rest/agile/1.0/board/${boardId}/sprint?state=active`);
+  // Several boards in this org run a perpetual "TIMESHEET: ..." sprint
+  // alongside the real work sprint — both come back as state=active, so
+  // exclude the timesheet one and, if more than one work sprint remains,
+  // take the most recently started.
+  const workSprints = (data.values || []).filter(s => !/^timesheet/i.test(s.name || ""));
+  const sprint = workSprints.slice().sort((a, b) => new Date(b.startDate) - new Date(a.startDate))[0];
+  if (!sprint) throw new Error(`no active (non-timesheet) sprint found for board ${boardId}`);
+  return sprint;
+}
+
+async function getRecentSprints(boardId, activeSprint){
+  const closed = await jiraFetch(`/rest/agile/1.0/board/${boardId}/sprint?state=closed`);
+  const values = (closed.values || []).slice()
+    .sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
+  return [...values.slice(-5), activeSprint];
+}
+
+async function searchSprintIssues(sprintId){
+  const fields = ["summary", "status", "assignee", "priority", "issuelinks", "created", "updated"];
+  let issues = [];
+  let nextPageToken;
+  do {
+    const body = { jql: `sprint = ${sprintId} ORDER BY updated DESC`, fields, maxResults: 100 };
+    if (nextPageToken) body.nextPageToken = nextPageToken;
+    const page = await jiraPost("/rest/api/3/search/jql", body);
+    issues = issues.concat(page.issues || []);
+    nextPageToken = page.nextPageToken;
+  } while (nextPageToken && issues.length < 500);
+  return issues;
+}
+
+async function getSprintVelocity(boardId, sprint){
+  try {
+    const report = await jiraFetch(`/rest/greenhopper/1.0/rapid/charts/sprintreport?rapidViewId=${boardId}&sprintId=${sprint.id}`);
+    const completed = ((report.contents || {}).completedIssues || []).length;
+    return { label: shortSprintLabel(sprint.name), completed };
+  } catch (err) {
+    return { label: shortSprintLabel(sprint.name), completed: 0 };
+  }
+}
+
+async function getIssueWithChangelog(key){
+  return jiraFetch(`/rest/api/3/issue/${key}?expand=changelog`);
+}
+
+function blockedNote(issue){
+  for (const link of issue.fields.issuelinks || []) {
+    if (link.inwardIssue && /blocked by/i.test(link.type?.inward || "")) {
+      const blocker = link.inwardIssue;
+      const stillOpen = (blocker.fields?.status?.statusCategory?.key || "") !== "done";
+      if (stillOpen) {
+        return `Blocked by ${blocker.key}${blocker.fields?.status ? ` (still ${blocker.fields.status.name})` : ""}`;
+      }
+    }
+  }
+  return null;
+}
+
+function lastStatusChangeDate(issueWithChangelog){
+  const histories = (issueWithChangelog.changelog?.histories || [])
+    .slice().sort((a, b) => new Date(b.created) - new Date(a.created));
+  for (const h of histories) {
+    if ((h.items || []).some(item => item.field === "status")) return h.created;
+  }
+  return null;
+}
+
+// Comments aren't part of the changelog, so comment-driven feed entries
+// (visible in the original mock data) can't be reconstructed from the
+// whitelisted endpoints alone — this derives entries from status,
+// assignee, link, and other field changes only.
+function latestFeedEntry(issueWithChangelog, issue){
+  const histories = (issueWithChangelog.changelog?.histories || [])
+    .slice().sort((a, b) => new Date(b.created) - new Date(a.created));
+  for (const h of histories) {
+    const who = h.author?.displayName || "Someone";
+    for (const item of h.items || []) {
+      if (item.field === "status") {
+        return { key: issue.key, title: issue.fields.summary, who, updated: h.created, action: "status", detail: item.toString };
+      }
+      if (item.field === "assignee") {
+        return { key: issue.key, title: issue.fields.summary, who, updated: h.created, action: "assignee", detail: item.toString || "Unassigned" };
+      }
+      if (item.field === "Link") {
+        return { key: issue.key, title: issue.fields.summary, who, updated: h.created, action: "link", detail: item.toString || "updated a link" };
+      }
+      if (item.field) {
+        return { key: issue.key, title: issue.fields.summary, who, updated: h.created, action: "field", detail: item.field };
+      }
+    }
+  }
+  return null;
+}
+
+async function buildTeamData(boardId, label){
+  const activeSprint = await getActiveSprint(boardId);
+  const issues = await searchSprintIssues(activeSprint.id);
+
+  const statusGroups = new Map();
+  let completed = 0, inProgress = 0, blocked = 0, unassigned = 0;
+  const impediments = [];
+
+  for (const issue of issues) {
+    const f = issue.fields;
+    const statusName = f.status?.name || "Unknown";
+    const categoryKey = f.status?.statusCategory?.key || "new";
+    statusGroups.set(statusName, (statusGroups.get(statusName) || 0) + 1);
+
+    const isBlockedStatus = /block|hold/i.test(statusName);
+    if (categoryKey === "done") completed++;
+    else if (isBlockedStatus) blocked++;
+    else if (categoryKey === "indeterminate") inProgress++;
+    if (!f.assignee) unassigned++;
+
+    if (isBlockedStatus) {
+      impediments.push({
+        key: issue.key,
+        title: f.summary,
+        assignee: f.assignee?.displayName || "Unassigned",
+        priority: priorityBucket(f.priority?.name),
+        updated: f.updated,
+        note: blockedNote(issue) || undefined
+      });
+    }
+  }
+
+  const statusCounts = Array.from(statusGroups.entries())
+    .map(([name, count]) => {
+      const sample = issues.find(i => (i.fields.status?.name || "Unknown") === name);
+      return { name, count, color: statusColorFor(name, sample?.fields.status?.statusCategory?.key) };
+    })
+    .sort((a, b) => b.count - a.count);
+
+  const byAssignee = new Map();
+  for (const issue of issues) {
+    const name = issue.fields.assignee?.displayName;
+    if (!name) continue;
+    if (!byAssignee.has(name)) byAssignee.set(name, { name, load: 0, high: 0 });
+    const entry = byAssignee.get(name);
+    entry.load++;
+    if (priorityBucket(issue.fields.priority?.name) === "high") entry.high++;
+  }
+  const capacityAll = Array.from(byAssignee.values()).sort((a, b) => b.load - a.load);
+  const capacity = capacityAll.slice(0, 8);
+  const rest = capacityAll.slice(8);
+  if (rest.length) {
+    capacity.push({
+      name: `Others (${rest.length} people)`,
+      load: rest.reduce((sum, p) => sum + p.load, 0),
+      high: rest.reduce((sum, p) => sum + p.high, 0)
+    });
+  }
+  const capacityNote = `Full sprint (${issues.length} issues${unassigned ? `, ${unassigned} unassigned not shown below` : ""}).`;
+
+  const agingCandidates = issues.filter(issue => {
+    const cat = issue.fields.status?.statusCategory?.key;
+    return cat === "indeterminate" && !/block|hold/i.test(issue.fields.status?.name || "");
+  });
+  const now = Date.now();
+  const agingResults = await mapWithConcurrency(agingCandidates.slice(0, 20), 5, async (issue) => {
+    try {
+      const full = await getIssueWithChangelog(issue.key);
+      const since = lastStatusChangeDate(full) || issue.fields.updated;
+      const days = Math.floor((now - new Date(since).getTime()) / (1000 * 60 * 60 * 24));
+      if (days >= STALE_DAYS_THRESHOLD) {
+        return {
+          key: issue.key,
+          title: issue.fields.summary,
+          assignee: issue.fields.assignee?.displayName || "Unassigned",
+          status: issue.fields.status.name,
+          since
+        };
+      }
+    } catch (err) { /* skip issues whose changelog failed rather than aborting the refresh */ }
+    return null;
+  });
+  const aging = agingResults.filter(Boolean);
+
+  const recentIssues = issues.slice()
+    .sort((a, b) => new Date(b.fields.updated) - new Date(a.fields.updated))
+    .slice(0, 8);
+  const feedResults = await mapWithConcurrency(recentIssues, 5, async (issue) => {
+    try {
+      const full = await getIssueWithChangelog(issue.key);
+      return latestFeedEntry(full, issue);
+    } catch (err) { return null; /* feed is best-effort */ }
+  });
+  const feed = feedResults.filter(Boolean);
+
+  const velocitySprints = await getRecentSprints(boardId, activeSprint);
+  const velocity = await mapWithConcurrency(velocitySprints, 3, (sprint) => getSprintVelocity(boardId, sprint));
+
+  return {
+    label,
+    real: true,
+    sprint: {
+      name: activeSprint.name,
+      start: activeSprint.startDate ? activeSprint.startDate.slice(0, 10) : "",
+      end: activeSprint.endDate ? activeSprint.endDate.slice(0, 10) : "",
+      goal: activeSprint.goal || "No goal set for this sprint"
+    },
+    kpis: { total: issues.length, completed, inProgress, blocked, unassigned },
+    velocity,
+    statusCounts,
+    impediments,
+    aging,
+    capacityNote,
+    capacity,
+    feed
+  };
+}
+
+async function refreshData(){
+  const btn = document.getElementById("refreshBtn");
+  const btnLabel = document.getElementById("refreshBtnLabel");
+  const errorBox = document.getElementById("refreshError");
+  const toast = document.getElementById("toast");
+  errorBox.style.display = "none";
+  toast.style.display = "none";
+  btn.disabled = true;
+  btnLabel.textContent = "Refreshing…";
+
+  const teamEntries = Object.entries(BOARD_IDS);
+  if (teamEntries.every(([, id]) => !id)) {
+    errorBox.style.display = "block";
+    errorBox.textContent = "Refresh failed: no board IDs configured yet. Fill in BOARD_IDS in index.html for each team, then try again.";
+    btn.disabled = false;
+    btnLabel.textContent = "Refresh data";
+    return;
+  }
+
+  const newLive = Object.assign({}, LIVE_DATA || DATA);
+  const failures = [];
+
+  // Teams are independent, so build them concurrently rather than one at a
+  // time — with each team already making several requests internally,
+  // sequential teams made a full refresh take minutes.
+  const teamResults = await Promise.allSettled(
+    teamEntries.map(([key, boardId]) => {
+      if (!boardId) return Promise.reject(new Error("no board ID configured"));
+      return buildTeamData(boardId, DATA[key]?.label || key);
+    })
+  );
+  teamResults.forEach((result, i) => {
+    const [key] = teamEntries[i];
+    if (result.status === "fulfilled") {
+      newLive[key] = result.value;
+    } else {
+      failures.push(`${DATA[key]?.label || key}: ${result.reason?.message || result.reason}`);
+    }
+  });
+
+  LIVE_DATA = newLive;
+  const nowIso = new Date().toISOString();
+  SNAPSHOT_ISO = nowIso;
+  AGING_SNAPSHOT_ISO = nowIso;
+
+  renderTeam(document.getElementById("teamSelect").value);
+
+  btn.disabled = false;
+  btnLabel.textContent = "Refresh data";
+
+  if (failures.length) {
+    errorBox.style.display = "block";
+    errorBox.textContent = `Refresh finished with errors — showing last known data for: ${failures.join("; ")}`;
+  } else {
+    toast.style.display = "block";
+    toast.style.color = "var(--accent-ink)";
+    toast.style.background = "var(--accent-tint)";
+    toast.style.borderColor = "#C7D8E7";
+    toast.textContent = "Refreshed from Jira just now.";
+    setTimeout(() => { toast.style.display = "none"; }, 4000);
+  }
+}
+
+renderTeam("overview");
+refreshData(); // auto-pull live data on load; DATA above is just an empty placeholder shell
+</script>
+</body>
+</html>
