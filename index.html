@@ -271,6 +271,7 @@
           <option value="full_throttle">Full Throttle Coders</option>
           <option value="runtime_terror">Runtime Terror</option>
           <option value="shield">Shield</option>
+          <option value="saturn">Saturn</option>
         </select>
         <button class="refresh" id="refreshBtn" onclick="refreshData()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
@@ -339,7 +340,7 @@
       </div>
       <div class="panel">
         <h2>Aging issues</h2>
-        <p class="panel-sub">In progress for 5+ days with no status change — not formally flagged, but worth a check</p>
+        <p class="panel-sub" id="agingSub">In progress for 5+ days with no status change — not formally flagged, but worth a check</p>
         <ul class="list" id="agingList"></ul>
       </div>
     </div>
@@ -367,6 +368,10 @@
 let SNAPSHOT_ISO = "2026-08-19T13:27:38Z";
 let AGING_SNAPSHOT_ISO = "2026-08-19T13:27:38Z";
 const STALE_DAYS_THRESHOLD = 5;
+// Per-team override of the aging threshold above (days). Production
+// Support runs a busier board, so it gets a longer grace period before an
+// in-progress issue is flagged as stale.
+const STALE_DAYS_OVERRIDES = { production_support: 7 };
 
 // --- Live refresh config -----------------------------------------------
 // Fill in after `wrangler deploy` (see deployment walkthrough).
@@ -380,7 +385,8 @@ const BOARD_IDS = {
   atlas: 2974,
   full_throttle: 2314,
   runtime_terror: 2348,
-  shield: 6500
+  shield: 6500,
+  saturn: 7642
 };
 
 const emptyTeam = (label) => ({
@@ -405,7 +411,8 @@ const DATA = {
   atlas: emptyTeam("Atlas"),
   full_throttle: emptyTeam("Full Throttle Coders"),
   runtime_terror: emptyTeam("Runtime Terror"),
-  shield: emptyTeam("Shield")
+  shield: emptyTeam("Shield"),
+  saturn: emptyTeam("Saturn")
 };
 
 
@@ -515,6 +522,9 @@ function renderTeam(key){
       </div>
     </li>
   `).join("") : `<li class="impediment"><div class="imp-body"><p class="imp-meta">No impediments right now.</p></div></li>`;
+
+  const agingThreshold = STALE_DAYS_OVERRIDES[key] ?? STALE_DAYS_THRESHOLD;
+  document.getElementById("agingSub").textContent = `In progress for ${agingThreshold}+ days with no status change — not formally flagged, but worth a check`;
 
   const agingList = document.getElementById("agingList");
   agingList.innerHTML = t.aging.length ? t.aging.map(a => `
@@ -775,7 +785,7 @@ function latestFeedEntry(issueWithChangelog, issue){
   return null;
 }
 
-async function buildTeamData(boardId, label){
+async function buildTeamData(boardId, label, staleDaysThreshold){
   const activeSprint = await getActiveSprint(boardId);
   const issues = await searchSprintIssues(activeSprint.id);
 
@@ -845,7 +855,7 @@ async function buildTeamData(boardId, label){
       const full = await getIssueWithChangelog(issue.key);
       const since = lastStatusChangeDate(full) || issue.fields.updated;
       const days = Math.floor((now - new Date(since).getTime()) / (1000 * 60 * 60 * 24));
-      if (days >= STALE_DAYS_THRESHOLD) {
+      if (days >= staleDaysThreshold) {
         return {
           key: issue.key,
           title: issue.fields.summary,
@@ -921,7 +931,8 @@ async function refreshData(){
   const teamResults = await Promise.allSettled(
     teamEntries.map(([key, boardId]) => {
       if (!boardId) return Promise.reject(new Error("no board ID configured"));
-      return buildTeamData(boardId, DATA[key]?.label || key);
+      const staleDays = STALE_DAYS_OVERRIDES[key] ?? STALE_DAYS_THRESHOLD;
+      return buildTeamData(boardId, DATA[key]?.label || key, staleDays);
     })
   );
   teamResults.forEach((result, i) => {
