@@ -369,9 +369,9 @@ let SNAPSHOT_ISO = "2026-08-19T13:27:38Z";
 let AGING_SNAPSHOT_ISO = "2026-08-19T13:27:38Z";
 const STALE_DAYS_THRESHOLD = 5;
 // Per-team override of the aging threshold above (days). Production
-// Support runs a busier board, so it gets a longer grace period before an
-// in-progress issue is flagged as stale.
-const STALE_DAYS_OVERRIDES = { production_support: 7 };
+// Support is a fast-moving board, so it flags stale issues much sooner
+// than the default.
+const STALE_DAYS_OVERRIDES = { production_support: 2 };
 
 // --- Live refresh config -----------------------------------------------
 // Fill in after `wrangler deploy` (see deployment walkthrough).
