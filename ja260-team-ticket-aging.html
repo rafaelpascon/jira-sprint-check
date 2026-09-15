@@ -1,0 +1,422 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Team Ticket Aging</title>
+<style>
+:root{
+  color-scheme: light;
+  --page: #f9f9f7;
+  --surface: #fcfcfb;
+  --surface-2: #f3f2ee;
+  --ink: #0b0b0b;
+  --ink-2: #52514e;
+  --muted: #898781;
+  --grid: #e1e0d9;
+  --border: rgba(11,11,11,0.10);
+  --accent: #2a78d6;
+  --accent-ink: #ffffff;
+
+  /* sequential aging ramp, light -> dark = fresher -> older */
+  --age-1: #6da7ec;
+  --age-2: #3987e5;
+  --age-3: #2a78d6;
+  --age-4: #1c5cab;
+  --age-5: #104281;
+
+  /* categorical priority slots */
+  --slot-1: #2a78d6;
+  --slot-2: #eb6834;
+  --slot-3: #1baf7a;
+  --slot-4: #eda100;
+  --slot-8: #e34948;
+  --slot-none: #b6b4ac;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --page: #0d0d0d;
+    --surface: #1a1a19;
+    --surface-2: #232322;
+    --ink: #ffffff;
+    --ink-2: #c3c2b7;
+    --muted: #898781;
+    --grid: #2c2c2a;
+    --border: rgba(255,255,255,0.10);
+    --accent: #3987e5;
+    --accent-ink: #0b0b0b;
+
+    --age-1: #5598e7;
+    --age-2: #3987e5;
+    --age-3: #2a78d6;
+    --age-4: #184f95;
+    --age-5: #104281;
+
+    --slot-1: #3987e5;
+    --slot-2: #d95926;
+    --slot-3: #199e70;
+    --slot-4: #c98500;
+    --slot-8: #e66767;
+    --slot-none: #5a5952;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --page: #0d0d0d;
+  --surface: #1a1a19;
+  --surface-2: #232322;
+  --ink: #ffffff;
+  --ink-2: #c3c2b7;
+  --muted: #898781;
+  --grid: #2c2c2a;
+  --border: rgba(255,255,255,0.10);
+  --accent: #3987e5;
+  --accent-ink: #0b0b0b;
+
+  --age-1: #5598e7;
+  --age-2: #3987e5;
+  --age-3: #2a78d6;
+  --age-4: #184f95;
+  --age-5: #104281;
+
+  --slot-1: #3987e5;
+  --slot-2: #d95926;
+  --slot-3: #199e70;
+  --slot-4: #c98500;
+  --slot-8: #e66767;
+  --slot-none: #5a5952;
+}
+
+*{ box-sizing: border-box; }
+html,body{ margin:0; padding:0; }
+body{
+  background: var(--page);
+  color: var(--ink);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.5;
+  padding-block: 28px;
+}
+.wrap{
+  max-width: 1080px;
+  margin: 0 auto;
+  padding-inline: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* header */
+.head{
+  display:flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.head h1{
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0 0 4px 0;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+.head .sub{
+  font-size: 13px;
+  color: var(--ink-2);
+  margin: 0;
+}
+.head .meta{
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 6px;
+  display:flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.head .meta a{ color: var(--muted); }
+
+.btn-refresh{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  border: none;
+  border-radius: 8px;
+  padding: 9px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn-refresh:hover{ filter: brightness(1.06); }
+.btn-refresh svg{ width:15px; height:15px; transition: transform .5s ease; }
+.btn-refresh.spin svg{ transform: rotate(360deg); }
+
+/* kpi row */
+.kpi-row{
+  display:grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+.kpi{
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 18px;
+}
+.kpi .label{
+  font-size: 11.5px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 6px;
+}
+.kpi .value{
+  font-size: 26px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.num-link{
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px dashed var(--border);
+  cursor: pointer;
+}
+.num-link:hover{
+  color: var(--accent);
+  border-bottom-style: solid;
+  border-bottom-color: var(--accent);
+}
+.kpi .foot{
+  font-size: 12.5px;
+  color: var(--ink-2);
+  margin-top: 3px;
+}
+
+/* card */
+.card{
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 18px 20px 20px;
+}
+.card h2{
+  font-size: 14px;
+  font-weight: 700;
+  margin: 0 0 2px 0;
+}
+.card .card-sub{
+  font-size: 12px;
+  color: var(--muted);
+  margin: 0 0 14px 0;
+}
+
+/* legend */
+.legend{
+  display:flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+  font-size: 12px;
+  color: var(--ink-2);
+}
+.legend .item{ display:flex; align-items:center; gap:6px; }
+.legend .swatch{ width:10px; height:10px; border-radius: 2px; display:inline-block; }
+
+/* table */
+table.aging{
+  width:100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+table.aging th, table.aging td{
+  padding: 8px 8px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+table.aging th:first-child, table.aging td:first-child{
+  text-align:left;
+  font-variant-numeric: normal;
+}
+table.aging thead th{
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--muted);
+  font-weight: 600;
+  border-bottom: 1px solid var(--grid);
+  padding-bottom: 8px;
+}
+table.aging tbody tr{ border-bottom: 1px solid var(--grid); }
+table.aging tbody tr:last-child{ border-bottom:none; }
+table.aging tbody td{ padding-top: 10px; padding-bottom: 10px; }
+table.aging td.name{ font-weight: 600; }
+table.aging td.total{ font-weight: 700; }
+table.aging td.bar-cell{ text-align:left; min-width: 160px; }
+.bar{
+  display:flex;
+  height: 14px;
+  border-radius: 3px;
+  overflow: hidden;
+  background: var(--surface-2);
+  min-width: 140px;
+}
+.bar span{ display:block; height:100%; }
+.bar span + span{ margin-left: 2px; }
+tfoot td{
+  border-top: 2px solid var(--grid);
+  font-weight: 700;
+  padding-top: 10px;
+}
+.table-wrap{ overflow-x:auto; }
+
+/* priority panels */
+.panels{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.plist{ display:flex; flex-direction:column; gap:10px; }
+.prow{ display:grid; grid-template-columns: 84px 1fr 70px; align-items:center; gap:10px; font-size: 13px; }
+.prow .plabel{ display:flex; align-items:center; gap:7px; color: var(--ink-2); }
+.prow .dot{ width:9px; height:9px; border-radius:50%; flex:none; }
+.prow .ptrack{ background: var(--surface-2); border-radius: 4px; height: 10px; overflow:hidden; }
+.prow .pfill{ height:100%; border-radius:4px; }
+.prow .pval{ text-align:right; font-variant-numeric: tabular-nums; color: var(--ink-2); }
+
+.footnote{
+  font-size: 12px;
+  color: var(--muted);
+  padding-top: 4px;
+}
+
+.toast{
+  position: fixed;
+  left: 50%;
+  bottom: 28px;
+  transform: translateX(-50%) translateY(12px);
+  background: var(--ink);
+  color: var(--page);
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  opacity: 0;
+  pointer-events:none;
+  transition: opacity .25s ease, transform .25s ease;
+  max-width: 90vw;
+  text-align:center;
+}
+.toast.show{ opacity: 1; transform: translateX(-50%) translateY(0); }
+
+@media (max-width: 640px){
+  .kpi-row{ grid-template-columns: 1fr; }
+  .panels{ grid-template-columns: 1fr; }
+  .prow{ grid-template-columns: 70px 1fr 50px; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head">
+    <div>
+      <h1>Team Ticket Aging</h1>
+      <p class="sub">JA-260 &middot; open tickets and aging, by person</p>
+      <div class="meta">
+        <span>Data as of 15 Sep 2026, 14:20 (America/Sao_Paulo)</span>
+        <span>Scope: assignee in (7 tracked people) AND statusCategory != Done · any project</span>
+        <a href="https://nationalautocare.atlassian.net/browse/JA-260" target="_blank" rel="noopener">JA-260 &rarr;</a>
+      </div>
+    </div>
+    <button class="btn-refresh" id="refreshBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg><span>Refresh data</span></button>
+  </div>
+
+  <div class="kpi-row">
+    <div class="kpi">
+      <div class="label">Total open tickets</div>
+      <div class="value"><a class="num-link" href="https://nationalautocare.atlassian.net/issues/?jql=assignee%20in%20%28%22Derrick%20Brown%22%2C%20%22David%20Fonzelle%22%2C%20%22Mark%20Slater%22%2C%20%22Rickie%20Hyer%22%2C%20%22Simon%20Martin%22%2C%20%22Joe%20Ristine%22%2C%20%22Andrew%20Rolle%22%29%20AND%20statusCategory%20%21%3D%20Done%20ORDER%20BY%20assignee%20ASC%2C%20created%20DESC" target="_blank" rel="noopener">277</a></div>
+      <div class="foot">across 7 tracked assignees</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Created &middot; last 30 days</div>
+      <div class="value"><a class="num-link" href="https://nationalautocare.atlassian.net/issues/?jql=assignee%20in%20%28%22Derrick%20Brown%22%2C%20%22David%20Fonzelle%22%2C%20%22Mark%20Slater%22%2C%20%22Rickie%20Hyer%22%2C%20%22Simon%20Martin%22%2C%20%22Joe%20Ristine%22%2C%20%22Andrew%20Rolle%22%29%20AND%20created%20%3E%3D%20-30d%20ORDER%20BY%20created%20DESC" target="_blank" rel="noopener">84</a></div>
+      <div class="foot">&asymp; 2.80 tickets / day</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Created &middot; last 90 days</div>
+      <div class="value"><a class="num-link" href="https://nationalautocare.atlassian.net/issues/?jql=assignee%20in%20%28%22Derrick%20Brown%22%2C%20%22David%20Fonzelle%22%2C%20%22Mark%20Slater%22%2C%20%22Rickie%20Hyer%22%2C%20%22Simon%20Martin%22%2C%20%22Joe%20Ristine%22%2C%20%22Andrew%20Rolle%22%29%20AND%20created%20%3E%3D%20-90d%20ORDER%20BY%20created%20DESC" target="_blank" rel="noopener">232</a></div>
+      <div class="foot">&asymp; 2.58 tickets / day</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Open tickets &amp; aging by person</h2>
+    <p class="card-sub">Sorted by total open &middot; aging measured from ticket Created date</p>
+    <div class="legend"><span style="color:var(--muted)">Ticket age:</span><span class="item"><span class="swatch" style="background:var(--age-1)"></span>0–30d</span><span class="item"><span class="swatch" style="background:var(--age-2)"></span>31–60d</span><span class="item"><span class="swatch" style="background:var(--age-3)"></span>61–90d</span><span class="item"><span class="swatch" style="background:var(--age-4)"></span>91–180d</span><span class="item"><span class="swatch" style="background:var(--age-5)"></span>181d+</span></div>
+    <div class="table-wrap">
+      <table class="aging">
+        <thead>
+          <tr>
+            <th>Assignee</th>
+            <th>Total</th>
+            <th>Aging profile</th>
+            <th>0&ndash;30</th>
+            <th>31&ndash;60</th>
+            <th>61&ndash;90</th>
+            <th>91&ndash;180</th>
+            <th>181+</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td class="name">Derrick Brown</td><td class="total"><a class="num-link" href="https://nationalautocare.atlassian.net/issues/?jql=assignee%20%3D%20%22Derrick%20Brown%22%20AND%20statusCategory%20%21%3D%20Done%20ORDER%20BY%20created%20DESC" target="_blank" rel="noopener">133</a></td><td class="bar-cell"><div class="bar"><span style="width:3.76%; background:var(--age-1)"></span><span style="width:1.50%; background:var(--age-2)"></span><span style="width:3.76%; background:var(--age-3)"></span><span style="width:17.29%; background:var(--age-4)"></span><span style="width:73.68%; background:var(--age-5)"></span></div></td><td><a class="num-link" href="https://nationalautocare.atlassian.net/issues/?jql=assignee%20%3D%20%22Derrick%20Brown%22%20AND%20statusCategory%20%21%3D%20Done%20AND%20created%20%3E%3D%20-30d%20ORDER%20BY%20created%20DESC" target="_blank" rel="noopener">5</a></td><td><a class="num-link" href="https://nationalautocare.atlassian.net/issues/?jql=assignee%20%3D%20%22Derrick%20Brown%22%20AND%20statusCategory%20%21%3D%20Done%20AND%20created%20%3C%20-30d%20AND%20created%20%3E%3D%20-60d%20ORDER%20BY%20created%20DESC" target="_blank" rel="noopener">2</a></td><td><a class="num-link" href="https://nationalautocare.atlassian.net/issues/?jql=assignee%20%3D%20%22Derrick%20Brown%22%20AND%20statusCategory%20%21%3D%20Done%20AND%20created%20%3C%20-60d%20AND%20created%20%3E%3D%20-90d%20ORDER%20BY%20created%20DESC" target="_blank" rel="noopener">5</a></td><td><a class="num-link" href="https://nationalautocare.atlassian.net/issues/?jql=assignee%20%3D%20%22Derrick%20Brown%22%20AND%20statusCategory%20%21%3D%20Done%20AND%20created%20%3C%20-90d%20AND%20created%20%3E%3D%20-180d%20ORDER%20BY%20created%20DESC" target="_blank" rel="noopener">23</a></td><td><a class="num-link" href="https://nationalautocare.atlassian.net/issues/?jql=assignee%20%3D%20%22Derrick%20Brown%22%20AND%20statusCategory%20%21%3D%20Done%20AND%20created%20%3C%20-180d%20ORDER%20BY%20created%20DESC" target="_blank" rel="noopener">98</a></td></tr>
+<tr><td class="name">David Fonzelle</td><td class="total"><a class="num-link" href="https://nationalautocare.atlassian.net/issues/?jql=assignee%20%3D%20%22David%20Fonzelle%22%20AND%20statusCategory%20%21%3D%20Done%20ORDER%20BY%20created%20DESC" target="_blank" rel="noopener">53</a></td><td class="bar-cell"><div class="bar"><span style="width:52.83%; background:var(--age-1)"></span><span style="width:11.32%; background:var(--age-2)"></span><span style="width:5.66%; background:var(--age-3)"></span><span style="width:9.43%; background:var(--age-4)"></span><span style="width:20.75%; background:var(--age-5)"></span></div></td><td><a class="num-link" href="https://nationalautocare.atlassian.net/issues/?jql=assignee%20%3D%20%22David%20Fonzelle%22%20AND%20statusCategory%20%21%3D%20Done%20AND%20created%20%3E%3D%20-30d%20ORDER%20BY%20created%20DESC" target="_blank" rel="noopener">28</a></td><td><a class="num-link" href="https://nationalautocare.atlassian.net/issues/?jql=assignee%20%3D%20%22David%20Fonzelle%22%20AND%20statusCategory%20%21%3D%20Done%20AND%20created%20%3C%20-30d%20AND%20created%20%3E%3D%20-60d%20ORDER%20BY%20created%20DESC" target="_blank" rel="noopener">6</a></td><td><a class="num-link" href="https://nationalautocare.atlassian.net/issues/?jql=assignee%20%3D%20%22David%20Fonzelle%22%20AND%20statusCategory%20%21%3D%20Done%20AND%20created%20%3C%20-60d%20AND%20created%20%3E%3D%20-90d%20ORDER%20BY%20created%20DESC" target="_blank" rel="noopener">3</a></td><td><a class="num-link" href="https://nationalautocare.atlassian.net/issues/?jql=assignee%20%3D%20%22David%20Fonzelle%22%20AND%20statusCategory%20%21%3D%20Done%20AND%20created%20%3C%20-90d%20AND%20created%20%3E%3D%20-180d%20ORDER%20BY%20created%20DESC" target="_blank" rel="noopener">5</a></td><td><a class="num-link" href="https://nationalautocare.atlassian.net/issues/?jql=assignee%20%3D%20%22David%20Fonzelle%22%20AND%20statusCategory%20%21%3D%20Done%20AND%20created%20%3C%20-180d%20ORDER%20BY%20created%20DESC" target="_blank" rel="noopener">11</a></td></tr>
+<tr><td class="name">Mark Slater</td><td class="total"><a class="num-link" href="https://nationalautocare.atlassian.net/issues/?jql=assignee%20%3D%20%22Mark%20Slater%22%20AND%20statusCategory%20%21%3D%20Done%20ORDER%20BY%20created%20DESC" target="_blank" rel="noopener">49</a></td><td class="bar-cell"><div class="bar"><span style="width:20.41%; background:var(--age-1)"></span><span style="width:22.45%; background:var(--age-2)"></span><span style="width:18.37%; background:var(--age-4)"></span><span style="width:38.78%; background:var(--age-5)"></span></div></td><td><a class="num-link" href="https://nationalautocare.atlassian.net/issues/?jql=assignee%20%3D%20%22Mark%20Slater%22%20AND%20statusCategory%20%21%3D%20Done%20AND%20created%20%3E%3D%20-30d%20ORDER%20BY%20created%20DESC" target="_blank" rel="noopener">10</a></td><td><a class="num-link" href="https://nationalautocare.atlassian.net/issues/?jql=assignee%20%3D%20%22Mark%20Slater%22%20AND%20statusCategory%20%21%3D%20Done%20AND%20created%20%3C%20-30d%20AND%20created%20%3E%3D%20-60d%20ORDER%20BY%20created%20DESC" target="_blank" rel="noopener">11</a></td><td>0</td><td><a class="num-link" href="https://nationalautocare.atlassian.net/issues/?jql=assignee%20%3D%20%22Mark%20Slater%22%20AND%20statusCategory%20%21%3D%20Done%20AND%20created%20%3C%20-90d%20AND%20created%20%3E%3D%20-180d%20ORDER%20BY%20created%20DESC" target="_blank" rel="noopener">9</a></td><td><a class="num-link" href="https://nationalautocare.atlassian.net/issues/?jql=assignee%20%3D%20%22Mark%20Slater%22%20AND%20statusCategory%20%21%3D%20Done%20AND%20created%20%3C%20-180d%20ORDER%20BY%20created%20DESC" target="_blank" rel="noopener">19</a></td></tr>
+<tr><td class="name">Rickie Hyer</td><td class="total"><a class="num-link" href="https://nationalautocare.atlassian.net/issues/?jql=assignee%20%3D%20%22Rickie%20Hyer%22%20AND%20statusCategory%20%21%3D%20Done%20ORDER%20BY%20created%20DESC" target="_blank" rel="noopener">25</a></td><td class="bar-cell"><div class="bar"><span style="width:8.00%; background:var(--age-1)"></span><span style="width:24.00%; background:var(--age-2)"></span><span style="width:4.00%; background:var(--age-3)"></span><span style="width:4.00%; background:var(--age-4)"></span><span style="width:60.00%; background:var(--age-5)"></span></div></td><td><a class="num-link" href="https://nationalautocare.atlassian.net/issues/?jql=assignee%20%3D%20%22Rickie%20Hyer%22%20AND%20statusCategory%20%21%3D%20Done%20AND%20created%20%3E%3D%20-30d%20ORDER%20BY%20created%20DESC" target="_blank" rel="noopener">2</a></td><td><a class="num-link" href="https://nationalautocare.atlassian.net/issues/?jql=assignee%20%3D%20%22Rickie%20Hyer%22%20AND%20statusCategory%20%21%3D%20Done%20AND%20created%20%3C%20-30d%20AND%20created%20%3E%3D%20-60d%20ORDER%20BY%20created%20DESC" target="_blank" rel="noopener">6</a></td><td><a class="num-link" href="https://nationalautocare.atlassian.net/issues/?jql=assignee%20%3D%20%22Rickie%20Hyer%22%20AND%20statusCategory%20%21%3D%20Done%20AND%20created%20%3C%20-60d%20AND%20created%20%3E%3D%20-90d%20ORDER%20BY%20created%20DESC" target="_blank" rel="noopener">1</a></td><td><a class="num-link" href="https://nationalautocare.atlassian.net/issues/?jql=assignee%20%3D%20%22Rickie%20Hyer%22%20AND%20statusCategory%20%21%3D%20Done%20AND%20created%20%3C%20-90d%20AND%20created%20%3E%3D%20-180d%20ORDER%20BY%20created%20DESC" target="_blank" rel="noopener">1</a></td><td><a class="num-link" href="https://nationalautocare.atlassian.net/issues/?jql=assignee%20%3D%20%22Rickie%20Hyer%22%20AND%20statusCategory%20%21%3D%20Done%20AND%20created%20%3C%20-180d%20ORDER%20BY%20created%20DESC" target="_blank" rel="noopener">15</a></td></tr>
+<tr><td class="name">Simon Martin</td><td class="total"><a class="num-link" href="https://nationalautocare.atlassian.net/issues/?jql=assignee%20%3D%20%22Simon%20Martin%22%20AND%20statusCategory%20%21%3D%20Done%20ORDER%20BY%20created%20DESC" target="_blank" rel="noopener">14</a></td><td class="bar-cell"><div class="bar"><span style="width:35.71%; background:var(--age-1)"></span><span style="width:7.14%; background:var(--age-2)"></span><span style="width:7.14%; background:var(--age-3)"></span><span style="width:14.29%; background:var(--age-4)"></span><span style="width:35.71%; background:var(--age-5)"></span></div></td><td><a class="num-link" href="https://nationalautocare.atlassian.net/issues/?jql=assignee%20%3D%20%22Simon%20Martin%22%20AND%20statusCategory%20%21%3D%20Done%20AND%20created%20%3E%3D%20-30d%20ORDER%20BY%20created%20DESC" target="_blank" rel="noopener">5</a></td><td><a class="num-link" href="https://nationalautocare.atlassian.net/issues/?jql=assignee%20%3D%20%22Simon%20Martin%22%20AND%20statusCategory%20%21%3D%20Done%20AND%20created%20%3C%20-30d%20AND%20created%20%3E%3D%20-60d%20ORDER%20BY%20created%20DESC" target="_blank" rel="noopener">1</a></td><td><a class="num-link" href="https://nationalautocare.atlassian.net/issues/?jql=assignee%20%3D%20%22Simon%20Martin%22%20AND%20statusCategory%20%21%3D%20Done%20AND%20created%20%3C%20-60d%20AND%20created%20%3E%3D%20-90d%20ORDER%20BY%20created%20DESC" target="_blank" rel="noopener">1</a></td><td><a class="num-link" href="https://nationalautocare.atlassian.net/issues/?jql=assignee%20%3D%20%22Simon%20Martin%22%20AND%20statusCategory%20%21%3D%20Done%20AND%20created%20%3C%20-90d%20AND%20created%20%3E%3D%20-180d%20ORDER%20BY%20created%20DESC" target="_blank" rel="noopener">2</a></td><td><a class="num-link" href="https://nationalautocare.atlassian.net/issues/?jql=assignee%20%3D%20%22Simon%20Martin%22%20AND%20statusCategory%20%21%3D%20Done%20AND%20created%20%3C%20-180d%20ORDER%20BY%20created%20DESC" target="_blank" rel="noopener">5</a></td></tr>
+<tr><td class="name">Joe Ristine</td><td class="total"><a class="num-link" href="https://nationalautocare.atlassian.net/issues/?jql=assignee%20%3D%20%22Joe%20Ristine%22%20AND%20statusCategory%20%21%3D%20Done%20ORDER%20BY%20created%20DESC" target="_blank" rel="noopener">3</a></td><td class="bar-cell"><div class="bar"><span style="width:66.67%; background:var(--age-1)"></span><span style="width:33.33%; background:var(--age-2)"></span></div></td><td><a class="num-link" href="https://nationalautocare.atlassian.net/issues/?jql=assignee%20%3D%20%22Joe%20Ristine%22%20AND%20statusCategory%20%21%3D%20Done%20AND%20created%20%3E%3D%20-30d%20ORDER%20BY%20created%20DESC" target="_blank" rel="noopener">2</a></td><td><a class="num-link" href="https://nationalautocare.atlassian.net/issues/?jql=assignee%20%3D%20%22Joe%20Ristine%22%20AND%20statusCategory%20%21%3D%20Done%20AND%20created%20%3C%20-30d%20AND%20created%20%3E%3D%20-60d%20ORDER%20BY%20created%20DESC" target="_blank" rel="noopener">1</a></td><td>0</td><td>0</td><td>0</td></tr>
+<tr><td class="name">Andrew Rolle</td><td class="total">0</td><td class="bar-cell"><div class="bar"><span style="width:100%; background:var(--surface-2)"></span></div></td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+        </tbody>
+        <tfoot>
+          <tr>
+            <td>Total</td>
+            <td><a class="num-link" href="https://nationalautocare.atlassian.net/issues/?jql=assignee%20in%20%28%22Derrick%20Brown%22%2C%20%22David%20Fonzelle%22%2C%20%22Mark%20Slater%22%2C%20%22Rickie%20Hyer%22%2C%20%22Simon%20Martin%22%2C%20%22Joe%20Ristine%22%2C%20%22Andrew%20Rolle%22%29%20AND%20statusCategory%20%21%3D%20Done%20ORDER%20BY%20assignee%20ASC%2C%20created%20DESC" target="_blank" rel="noopener">277</a></td>
+            <td></td>
+            <td><a class="num-link" href="https://nationalautocare.atlassian.net/issues/?jql=assignee%20in%20%28%22Derrick%20Brown%22%2C%20%22David%20Fonzelle%22%2C%20%22Mark%20Slater%22%2C%20%22Rickie%20Hyer%22%2C%20%22Simon%20Martin%22%2C%20%22Joe%20Ristine%22%2C%20%22Andrew%20Rolle%22%29%20AND%20statusCategory%20%21%3D%20Done%20AND%20created%20%3E%3D%20-30d%20ORDER%20BY%20assignee%20ASC%2C%20created%20DESC" target="_blank" rel="noopener">52</a></td>
+            <td><a class="num-link" href="https://nationalautocare.atlassian.net/issues/?jql=assignee%20in%20%28%22Derrick%20Brown%22%2C%20%22David%20Fonzelle%22%2C%20%22Mark%20Slater%22%2C%20%22Rickie%20Hyer%22%2C%20%22Simon%20Martin%22%2C%20%22Joe%20Ristine%22%2C%20%22Andrew%20Rolle%22%29%20AND%20statusCategory%20%21%3D%20Done%20AND%20created%20%3C%20-30d%20AND%20created%20%3E%3D%20-60d%20ORDER%20BY%20assignee%20ASC%2C%20created%20DESC" target="_blank" rel="noopener">27</a></td>
+            <td><a class="num-link" href="https://nationalautocare.atlassian.net/issues/?jql=assignee%20in%20%28%22Derrick%20Brown%22%2C%20%22David%20Fonzelle%22%2C%20%22Mark%20Slater%22%2C%20%22Rickie%20Hyer%22%2C%20%22Simon%20Martin%22%2C%20%22Joe%20Ristine%22%2C%20%22Andrew%20Rolle%22%29%20AND%20statusCategory%20%21%3D%20Done%20AND%20created%20%3C%20-60d%20AND%20created%20%3E%3D%20-90d%20ORDER%20BY%20assignee%20ASC%2C%20created%20DESC" target="_blank" rel="noopener">10</a></td>
+            <td><a class="num-link" href="https://nationalautocare.atlassian.net/issues/?jql=assignee%20in%20%28%22Derrick%20Brown%22%2C%20%22David%20Fonzelle%22%2C%20%22Mark%20Slater%22%2C%20%22Rickie%20Hyer%22%2C%20%22Simon%20Martin%22%2C%20%22Joe%20Ristine%22%2C%20%22Andrew%20Rolle%22%29%20AND%20statusCategory%20%21%3D%20Done%20AND%20created%20%3C%20-90d%20AND%20created%20%3E%3D%20-180d%20ORDER%20BY%20assignee%20ASC%2C%20created%20DESC" target="_blank" rel="noopener">40</a></td>
+            <td><a class="num-link" href="https://nationalautocare.atlassian.net/issues/?jql=assignee%20in%20%28%22Derrick%20Brown%22%2C%20%22David%20Fonzelle%22%2C%20%22Mark%20Slater%22%2C%20%22Rickie%20Hyer%22%2C%20%22Simon%20Martin%22%2C%20%22Joe%20Ristine%22%2C%20%22Andrew%20Rolle%22%29%20AND%20statusCategory%20%21%3D%20Done%20AND%20created%20%3C%20-180d%20ORDER%20BY%20assignee%20ASC%2C%20created%20DESC" target="_blank" rel="noopener">148</a></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+
+  <div class="panels">
+    <div class="card"><h2>0&ndash;30 day bucket, by priority</h2><p class="card-sub">SLA alignment view Juan asked for</p><div class="plist"><div class="prow"><span class="plabel"><span class="dot" style="background:var(--slot-1)"></span>Medium</span><span class="ptrack"><span class="pfill" style="width:51.9%; background:var(--slot-1)"></span></span><span class="pval"><a class="num-link" href="https://nationalautocare.atlassian.net/issues/?jql=assignee%20in%20%28%22Derrick%20Brown%22%2C%20%22David%20Fonzelle%22%2C%20%22Mark%20Slater%22%2C%20%22Rickie%20Hyer%22%2C%20%22Simon%20Martin%22%2C%20%22Joe%20Ristine%22%2C%20%22Andrew%20Rolle%22%29%20AND%20statusCategory%20%21%3D%20Done%20AND%20created%20%3E%3D%20-30d%20AND%20priority%20%3D%20%22Medium%22%20ORDER%20BY%20created%20DESC" target="_blank" rel="noopener">27</a> &middot; 52%</span></div><div class="prow"><span class="plabel"><span class="dot" style="background:var(--slot-4)"></span>High</span><span class="ptrack"><span class="pfill" style="width:46.2%; background:var(--slot-4)"></span></span><span class="pval"><a class="num-link" href="https://nationalautocare.atlassian.net/issues/?jql=assignee%20in%20%28%22Derrick%20Brown%22%2C%20%22David%20Fonzelle%22%2C%20%22Mark%20Slater%22%2C%20%22Rickie%20Hyer%22%2C%20%22Simon%20Martin%22%2C%20%22Joe%20Ristine%22%2C%20%22Andrew%20Rolle%22%29%20AND%20statusCategory%20%21%3D%20Done%20AND%20created%20%3E%3D%20-30d%20AND%20priority%20%3D%20%22High%22%20ORDER%20BY%20created%20DESC" target="_blank" rel="noopener">24</a> &middot; 46%</span></div><div class="prow"><span class="plabel"><span class="dot" style="background:var(--slot-2)"></span>Highest</span><span class="ptrack"><span class="pfill" style="width:1.9%; background:var(--slot-2)"></span></span><span class="pval"><a class="num-link" href="https://nationalautocare.atlassian.net/issues/?jql=assignee%20in%20%28%22Derrick%20Brown%22%2C%20%22David%20Fonzelle%22%2C%20%22Mark%20Slater%22%2C%20%22Rickie%20Hyer%22%2C%20%22Simon%20Martin%22%2C%20%22Joe%20Ristine%22%2C%20%22Andrew%20Rolle%22%29%20AND%20statusCategory%20%21%3D%20Done%20AND%20created%20%3E%3D%20-30d%20AND%20priority%20%3D%20%22Highest%22%20ORDER%20BY%20created%20DESC" target="_blank" rel="noopener">1</a> &middot; 2%</span></div></div></div>
+    <div class="card"><h2>All open tickets, by priority</h2><p class="card-sub">Full backlog, for context</p><div class="plist"><div class="prow"><span class="plabel"><span class="dot" style="background:var(--slot-1)"></span>Medium</span><span class="ptrack"><span class="pfill" style="width:77.3%; background:var(--slot-1)"></span></span><span class="pval"><a class="num-link" href="https://nationalautocare.atlassian.net/issues/?jql=assignee%20in%20%28%22Derrick%20Brown%22%2C%20%22David%20Fonzelle%22%2C%20%22Mark%20Slater%22%2C%20%22Rickie%20Hyer%22%2C%20%22Simon%20Martin%22%2C%20%22Joe%20Ristine%22%2C%20%22Andrew%20Rolle%22%29%20AND%20statusCategory%20%21%3D%20Done%20AND%20priority%20%3D%20%22Medium%22%20ORDER%20BY%20created%20DESC" target="_blank" rel="noopener">214</a> &middot; 77%</span></div><div class="prow"><span class="plabel"><span class="dot" style="background:var(--slot-4)"></span>High</span><span class="ptrack"><span class="pfill" style="width:15.2%; background:var(--slot-4)"></span></span><span class="pval"><a class="num-link" href="https://nationalautocare.atlassian.net/issues/?jql=assignee%20in%20%28%22Derrick%20Brown%22%2C%20%22David%20Fonzelle%22%2C%20%22Mark%20Slater%22%2C%20%22Rickie%20Hyer%22%2C%20%22Simon%20Martin%22%2C%20%22Joe%20Ristine%22%2C%20%22Andrew%20Rolle%22%29%20AND%20statusCategory%20%21%3D%20Done%20AND%20priority%20%3D%20%22High%22%20ORDER%20BY%20created%20DESC" target="_blank" rel="noopener">42</a> &middot; 15%</span></div><div class="prow"><span class="plabel"><span class="dot" style="background:var(--slot-8)"></span>Critical</span><span class="ptrack"><span class="pfill" style="width:4.0%; background:var(--slot-8)"></span></span><span class="pval"><a class="num-link" href="https://nationalautocare.atlassian.net/issues/?jql=assignee%20in%20%28%22Derrick%20Brown%22%2C%20%22David%20Fonzelle%22%2C%20%22Mark%20Slater%22%2C%20%22Rickie%20Hyer%22%2C%20%22Simon%20Martin%22%2C%20%22Joe%20Ristine%22%2C%20%22Andrew%20Rolle%22%29%20AND%20statusCategory%20%21%3D%20Done%20AND%20priority%20%3D%20%22Critical%22%20ORDER%20BY%20created%20DESC" target="_blank" rel="noopener">11</a> &middot; 4%</span></div><div class="prow"><span class="plabel"><span class="dot" style="background:var(--slot-2)"></span>Highest</span><span class="ptrack"><span class="pfill" style="width:2.9%; background:var(--slot-2)"></span></span><span class="pval"><a class="num-link" href="https://nationalautocare.atlassian.net/issues/?jql=assignee%20in%20%28%22Derrick%20Brown%22%2C%20%22David%20Fonzelle%22%2C%20%22Mark%20Slater%22%2C%20%22Rickie%20Hyer%22%2C%20%22Simon%20Martin%22%2C%20%22Joe%20Ristine%22%2C%20%22Andrew%20Rolle%22%29%20AND%20statusCategory%20%21%3D%20Done%20AND%20priority%20%3D%20%22Highest%22%20ORDER%20BY%20created%20DESC" target="_blank" rel="noopener">8</a> &middot; 3%</span></div><div class="prow"><span class="plabel"><span class="dot" style="background:var(--slot-none)"></span>None</span><span class="ptrack"><span class="pfill" style="width:0.7%; background:var(--slot-none)"></span></span><span class="pval"><a class="num-link" href="https://nationalautocare.atlassian.net/issues/?jql=assignee%20in%20%28%22Derrick%20Brown%22%2C%20%22David%20Fonzelle%22%2C%20%22Mark%20Slater%22%2C%20%22Rickie%20Hyer%22%2C%20%22Simon%20Martin%22%2C%20%22Joe%20Ristine%22%2C%20%22Andrew%20Rolle%22%29%20AND%20statusCategory%20%21%3D%20Done%20AND%20priority%20is%20EMPTY%20ORDER%20BY%20created%20DESC" target="_blank" rel="noopener">2</a> &middot; 1%</span></div></div></div>
+  </div>
+
+  <p class="footnote">Static snapshot pulled directly from Jira via JQL &middot; not yet wired to a live refresh proxy. Every number links to the matching issues in Jira.</p>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  var btn = document.getElementById('refreshBtn');
+  var toast = document.getElementById('toast');
+  var timer = null;
+  btn.addEventListener('click', function(){
+    btn.classList.add('spin');
+    setTimeout(function(){ btn.classList.remove('spin'); }, 500);
+    toast.textContent = 'Static snapshot \u2014 live refresh via secure proxy is on the roadmap. Ask Rafael to regenerate for now.';
+    toast.classList.add('show');
+    clearTimeout(timer);
+    timer = setTimeout(function(){ toast.classList.remove('show'); }, 3200);
+  });
+})();
+</script>
+</body>
+</html>
